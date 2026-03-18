@@ -2,48 +2,46 @@ import pandas as pd
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
-# Load dataset
 df = pd.read_csv("resume_data.csv")
 
-# Check columns (IMPORTANT)
-print("Columns in dataset:", df.columns)
+# FIX column names
+df.columns = df.columns.str.strip()
 
-# Use correct column name from your dataset
-# Change "Resume" if your column is named differently
-cv_texts = df["responsibilities"].dropna().tolist()
+# Fill missing values
+df = df.fillna("")
 
-# Limit data (keeps it fast and clean)
-cv_texts = cv_texts[:5]
+# Combine CV fields
+df["cv_text"] = (
+    df["skills"] + " " +
+    df["responsibilities"] + " " +
+    df["positions"] + " " +
+    df["degree_names"]
+)
 
-# Sample job descriptions (you can expand later)
-jobs = [
-    "data analyst internship python sql",
-    "web developer html css javascript",
-    "machine learning internship python",
-    "finance assistant internship",
-    "software engineering internship java"
-]
+# Combine Job fields
+df["job_text"] = (
+    df["job_position_name"] + " " +
+    df["skills_required"] + " " +
+    df["responsibilities.1"]
+)
 
-# Combine CVs and jobs
-all_texts = cv_texts + jobs
+# Sample
+cv_texts = df["cv_text"].tolist()[:5]
+job_texts = df["job_text"].tolist()[:5]
 
-# TF-IDF vectorization
-vectorizer = TfidfVectorizer(stop_words='english')
+# Vectorization
+all_texts = cv_texts + job_texts
+vectorizer = TfidfVectorizer(stop_words="english")
 vectors = vectorizer.fit_transform(all_texts)
 
-# Compute similarity
+# Similarity
 similarity_matrix = cosine_similarity(vectors)
 
-# Display readable results
-print("\n--- Similarity Results ---\n")
+print("\n--- Fixed Similarity Results ---\n")
 
 num_cvs = len(cv_texts)
 
 for i in range(num_cvs):
-    for j in range(len(jobs)):
+    for j in range(len(job_texts)):
         score = similarity_matrix[i][num_cvs + j]
         print(f"CV {i+1} vs Job {j+1}: {score:.2f}")
-
-# Optional: show dataset preview
-print("\n--- Dataset Preview ---\n")
-print(df.head())
